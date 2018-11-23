@@ -1,0 +1,25 @@
+@charset "EUC-KR";
+body {
+	font-family:"NanumGothic";
+
+	src:url('./font/NanumGothic.eot');
+
+	src:url('./font/NanumGothic.eot?#iefix') format('embedded-opentype'),
+
+	url('./font/NanumGothic.eot/NanumGothic.woff') format('woff'),
+
+	url('./font/NanumGothic.eot/NanumGothic.svg#NanumGothic') format('svg')
+
+	src:local(¡Ø), url('./font/NanumGothic.eot/NanumGothic.woff') format('woff');
+	font-size: 12px;
+}
+.centerTable {
+	table-layout:fixed; 
+}
+.centerTable thead {
+	text-align: center;
+	word-break:break-all;
+}
+.centerTable tbody {
+	text-align: center;
+}
