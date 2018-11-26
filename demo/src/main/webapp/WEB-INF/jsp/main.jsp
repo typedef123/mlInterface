@@ -6,13 +6,19 @@
 <meta charset="EUC-KR">
 <title>Insert title here</title>
 </head>
+<script>
+$(document).ready(function(){
+	
+});
+</script>
 <body>
 	<%@include  file="header.jsp" %>
 	
 	<div class="container border card">
 		<div class="card-body">
 			<h5 class="card-title">테스트 실행 중</h5>
-			
+			<h5>"${executing }"</h5>
+			<progressbar>
 		</div>
 	</div>
 	

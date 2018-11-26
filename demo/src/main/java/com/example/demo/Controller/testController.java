@@ -1,8 +1,14 @@
 package com.example.demo.Controller;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -26,6 +32,10 @@ import com.jcraft.jsch.ChannelExec;
 import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.Session;
 
+/**
+ * @author enffl
+ *
+ */
 @Controller
 public class testController {
 	String username = "jwyeom";
@@ -37,6 +47,13 @@ public class testController {
     Session session = null;
     ChannelExec channel = null;
 	
+    private boolean executing = false;
+    private String nowFile = "";
+    private String nowIp = "";
+    private String nowModel = "";
+    private LocalDateTime startTest = LocalDateTime.now();
+    
+    
     @Autowired
 	IMLModelService MLModelService;
 	/**
@@ -144,6 +161,7 @@ public class testController {
 	@ResponseBody
 	public void execTest(@RequestParam(value="mlList", required=false) List<Integer> mlList,
 			Model model,HttpServletRequest request,HttpSession sess) throws UnsupportedEncodingException, IOException, JSchException {
+		executing = true;
 		
 		CommandExecuter cmdExecuter = new CommandExecuter();
 		String ip = request.getRemoteAddr();
@@ -151,40 +169,134 @@ public class testController {
 
     	FileReader fileReader = new FileReader();
     	ArrayList<File> fileList = fileReader.getAllFile(ip, ".dat");
+    	String[] words = null;
+    	String tempPath = null;
+    	String tempFileName = null;
+    	
     	for(File tempFile : fileList) {
-    		
     		//csv 만들기
-    		String tempPath=tempFile.getParent();
-			String tempFileName=tempFile.getName();  
+    		tempPath =tempFile.getParent();
+    		tempFileName =tempFile.getName();  
 			String command = cmdExecuter.inputCommand("python exportCSV.py " + tempPath + '\\' + tempFileName);
-			
-			//결과 받기
 			String result = cmdExecuter.execCommand(command);
 			result=result.substring(result.indexOf("'") + 1, result.lastIndexOf("'"));
-			String[] words = result.split("', '");
+			words = result.split("', '");
+    	}
+    	
+    	ArrayList<File> csvFileList = FileReader.getAllFile(ip, ".csv");
+    	for(File tempFile : csvFileList) {
+			//결과 받기			
 			List<Integer> idxList = new ArrayList<Integer>();
         	if(tempFile.isFile()) {
 				for(int i = 0; i < mlList.size(); i++) {
 					MLModel mlmodel = MLModelService.getOneModel(mlList.get(i));
+					
+					//현재 진행 정보 저장
+					tempFileName =tempFile.getName();  
+					nowFile=tempFileName;
+					nowIp = ip;
+					nowModel = mlmodel.getName();
+					startTest = LocalDateTime.now();
+					
 					String[] mlModelFeature = mlmodel.getFeature().split(",");
-					System.out.println(mlModelFeature.length);
-					System.out.println(mlModelFeature[1]);
-					String indexList = "";
+
+					String indexList = ""; 
 					//index 알아내기
 					for(int j = 0; j < mlmodel.getFeature_cnt(); j++)
 						idxList.add(Arrays.binarySearch(words, mlModelFeature[j]));
 					for(int j = 0; j < mlmodel.getFeature_cnt(); j++) {
 						indexList += " " + idxList.get(j);
 					}
+					
 					//실행
-					//String cmd = cmdExecuter.inputCommand("python " + mlmodel.getFile() + " " + tempPath+"\\" + tempFileName + " " + mlmodel.getFeature_cnt() + indexList);
-					System.out.println("python " + mlmodel.getFile() + " " + tempPath+"\\" + tempFileName + " " + mlmodel.getFeature_cnt() + indexList);
+					String cmd = cmdExecuter.inputCommand("python execute.py " + tempPath + " " + tempPath+'\\' + mlmodel.getFile() + " " + tempPath+'\\' + tempFileName + " " + mlmodel.getFeature_cnt() + indexList);
+					//String cmd = cmdExecuter.inputCommand("ipconfig");
+					String pythonResult = cmdExecuter.execCommand(cmd);
+					System.out.println(pythonResult);
+					System.out.println("python execute.py " + tempPath + " " + tempPath+'\\' + mlmodel.getFile() + " " + tempPath+'\\' + tempFileName + " " + mlmodel.getFeature_cnt() + indexList);
+					
+					//실행완료
+					//실행 결과 파일 읽기
+					BufferedReader br = null;
+					br = Files.newBufferedReader(Paths.get(".\\output.csv"));
+					Charset.forName("UTF-8");
+					String line = "";
+					List<List<String>> ret = new ArrayList<List<String>>();
+					while((line = br.readLine()) != null) {
+						List<String> tmpList = new ArrayList<String>();
+						String array[] = line.split(",");
+						tmpList = Arrays.asList(array);
+						ret.add(tmpList);
+					}
+					System.out.println("size : " + ret.size());
+					br.close();
+					//원래 파일 읽기
+					br = Files.newBufferedReader(Paths.get("D:\\\\share\\" + tempFileName));
+					Charset.forName("UTF-8");
+					line = "";
+					List<List<String>> originFile = new  ArrayList<List<String>>();
+					while((line = br.readLine()) != null) {
+						List<String> tmpList = new ArrayList<String>();
+						String array[] = line.split(",");
+						tmpList = Arrays.asList(array);
+						originFile.add(tmpList);
+					}
+					System.out.println("size : " + originFile.size());
+
+					br.close();
+        			BufferedWriter bufWriter = Files.newBufferedWriter(Paths.get("D:\\\\share\\" + tempFileName));
+					int k = 0;
+					boolean space = false;
+					if(k < originFile.size()/2) {
+						space = true;
+					}
+					for(List<String> newLine : originFile) {
+						List<String> list = newLine;
+						
+						for(String data: list) {
+							bufWriter.write(data);
+							bufWriter.write(",");
+						}
+						if(k == 0) {
+							bufWriter.write("LABEL");
+						} else if(space == true && k % 2 == 1) {
+							bufWriter.write("");
+						} else if((space == false && k < 10 || space==true && k < 24)) {
+							bufWriter.write("0");
+						} else if(space == true && k > 24){
+							bufWriter.write(ret.get((k-24)/2).get(0));
+						}
+						k++;
+						bufWriter.newLine();
+					}
+					bufWriter.close();
 				}
   			}
-        	
-			System.out.println(result);
-			currentFileList.add(tempFileName);
-  		    //jshConnector.setCommand("source /home/anaconda3/bin/activate tf;python /home/jwyeom/get_keys.py " + tempFileName + ";");
-    	}        
+        
+    	}
+    	
+    	//현재 진행 정보 초기화
+    	executing=false;
+    	tempFileName = "";  
+		nowFile="";
+		nowIp = "";
+		nowModel = "";
+		startTest = LocalDateTime.now();
+	}
+	
+	
+	/**
+	 * @param model
+	 * @return MAIN PAGE
+	 * 현재 실행 정보를 담아 리턴
+	 */
+	@RequestMapping("/main")
+	public String getNow(Model model) {
+		model.addAttribute("executing", executing);
+		model.addAttribute("nowFile", nowFile);
+		model.addAttribute("nowIp", nowIp);
+		model.addAttribute("nowModel", nowModel);
+		model.addAttribute("startTest", startTest);
+		return "main";
 	}
 }

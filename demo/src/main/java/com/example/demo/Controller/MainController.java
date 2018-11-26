@@ -12,8 +12,8 @@ import com.jcraft.jsch.JSchException;
 @Controller
 public class MainController {
 	
-	@RequestMapping("/main")
+	/*@RequestMapping("/main")
 	public String main(Model model) {
 		return "main";
-	}
+	}*/
 }

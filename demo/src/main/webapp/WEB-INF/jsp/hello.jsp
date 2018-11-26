@@ -220,8 +220,7 @@ function execTest() {
 		contentType : false,
 		async: false,
 		success : function() {
-			makeNull();
-			console.log();
+			alert('실행 완료되었습니다.');
 		},
 		error : function(error) {
 			alert("파일 업로드 실패");
@@ -250,8 +249,8 @@ function makeNull() {
 	<div class="container border card">
 		<div class="card-body">
 			<h5 class="card-title">검증</h5>
-			<!--
-			<div class="card">
+			
+			<!-- <div class="card">
 				<div class="card-body">
 					<h5 class="card-title">데이터 입력</h5>
 					<form method="POST" enctype="multipart/form-data" class="filebox bs3-primary"  id="fileForm">
@@ -271,8 +270,8 @@ function makeNull() {
 					</form>
 				</div>
 			</div>
-			<br>
-			-->
+			<br> -->
+			
 			<div class="card">
 				<div class="card-body">
 					<h5 class="card-title">검증 대상 파일</h5>
@@ -383,7 +382,7 @@ function makeNull() {
 				</div>
 			</div>
 			
-		</div>	-->	
+		</div>	--%>
 		
 		
 		<p>

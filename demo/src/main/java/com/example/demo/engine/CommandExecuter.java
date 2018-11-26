@@ -5,9 +5,6 @@ import java.io.InputStreamReader;
 
 public class CommandExecuter {
 	private StringBuffer buffer;
-	private Process process;
-	private BufferedReader bufferedReader;
-	private StringBuffer readBuffer;
 	
 	public String inputCommand(String cmd) {
 		buffer = new StringBuffer();
@@ -19,6 +16,10 @@ public class CommandExecuter {
 	}
 	
 	public String execCommand(String cmd) {
+		BufferedReader bufferedReader;
+		StringBuffer readBuffer;
+		Process process;
+
 		try {
 			process = Runtime.getRuntime().exec(cmd);
 			bufferedReader = new BufferedReader(new InputStreamReader(process.getInputStream()));
