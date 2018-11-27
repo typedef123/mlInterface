@@ -156,7 +156,7 @@ function completeRow(obj) {
 	formData.append('id', tr[0].id);
 	formData.append('feature', tr[0].children[4].children[0].value);
 	formData.append('name', tr[0].children[2].children[0].value);
-	formData.append('description', tr[0].children[5].children[0].data-content)
+	formData.append('description', tr[0].children[5].children[0].value)
     $.ajax({
 		type : 'post',
 		url : '/editModel',
@@ -294,9 +294,7 @@ function makeNull() {
 			</div>
 		</div>
 	</div>
-	<br>
-	<div><p class="credits"><span class="stars">&#10026;</span>A pen by <a href="https://twitter.com/lukeslytalker" target="_blank">Nate Balcom</a> more <a href="https://codepen.io/nbalcom/pens/public/" target="_blank">pens here</a><span class="stars">&#10026;</span></p></div>
-	
+	<br>	
 	<div class="container border card">
 		<div class="card-body">
 			<h5 class="card-title">검증 구성 추가</h5>

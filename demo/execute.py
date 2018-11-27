@@ -39,4 +39,4 @@ testX /= 255
 testX = testX.reshape(len(testX), 10, cnt, 1)
 print(len(testX))
 output = model.predict_classes(testX)
-np.savetxt("./output.csv", output, delimiter=",")
+np.savetxt("./output.csv", result.astype(int), fmt='%5.0f'. output, delimiter=",")

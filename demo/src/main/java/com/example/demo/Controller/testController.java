@@ -9,6 +9,8 @@ import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -22,14 +24,14 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
-import org.springframework.web.context.request.RequestContextHolder;
-import org.springframework.web.context.request.ServletRequestAttributes;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.example.demo.bean.MLModel;
+import com.example.demo.bean.TestResult;
 import com.example.demo.engine.CommandExecuter;
 import com.example.demo.engine.FileReader;
 import com.example.demo.service.IMLModelService;
+import com.example.demo.service.ITestResultService;
 import com.jcraft.jsch.ChannelExec;
 import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.Session;
@@ -58,6 +60,9 @@ public class testController {
 
 	@Autowired
 	IMLModelService MLModelService;
+	
+	@Autowired
+	ITestResultService TestResultService;
 	/**
 	 * @param file
 	 * @param model
@@ -186,7 +191,8 @@ public class testController {
 
 		ArrayList<File> csvFileList = FileReader.getAllFile(ip, ".csv");
 		for(File tempFile : csvFileList) {
-			//결과 받기			
+			String testfile = tempFile.getName();
+			//결과 받기
 			List<Integer> idxList = new ArrayList<Integer>();
 			if(tempFile.isFile()) {
 				for(int i = 0; i < mlList.size(); i++) {
@@ -274,6 +280,40 @@ public class testController {
 						bufWriter.newLine();
 					}
 					bufWriter.close();
+					
+					
+					TestResult testResult = new TestResult();
+					testResult.setMlmodelid(mlmodel.getId());
+					testResult.setIp(ip);
+					
+					testResult.setStarttime(startTest);
+					LocalDateTime endTime = LocalDateTime.now();
+					testResult.setEndtime(endTime);
+
+					testResult.setResultfile(tempFileName);
+					testResult.setTestfile(testfile);
+					
+					String spentTime = ChronoUnit.MINUTES.between(startTest, endTime) + "분 " + ChronoUnit.SECONDS.between(startTest, endTime) + "초";
+					testResult.setSpenttime(spentTime);
+
+					int abnormalsection = 0;
+					int normalsection = 0; 
+					boolean abnormal = false;
+					for(List<String> newLine : ret) {
+						int num = Integer.parseInt(newLine.get(0));
+						if(abnormal == false && num == 1) {
+							abnormal = true;
+							abnormalsection++;
+						}
+						else if(abnormal == true && num == 0) {
+							abnormal = false;
+							normalsection++;
+						}
+					}
+					testResult.setAbnormalsection(abnormalsection);
+					testResult.setNormalsection(normalsection);
+					testResult.setTotalrow(ret.size());
+					TestResultService.saveAndFulsh(testResult);
 				}
 			}
 		}
@@ -293,6 +333,8 @@ public class testController {
 		model.addAttribute("nowIp", nowIp);
 		model.addAttribute("nowModel", nowModel);
 		model.addAttribute("startTest", startTest);
+		model.addAttribute("localDateTimeFormat", DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm"));
+
 		return "main";
 	}
 }
