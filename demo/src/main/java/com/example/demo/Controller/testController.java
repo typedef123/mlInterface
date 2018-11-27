@@ -22,6 +22,8 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.example.demo.bean.MLModel;
@@ -41,20 +43,20 @@ public class testController {
 	String username = "jwyeom";
 	String host = "211.116.222.98";
 	int port = 22;
-    String password = "suresoft0";
-    MultipartFile uploadFile;
+	String password = "suresoft0";
+	MultipartFile uploadFile;
 
-    Session session = null;
-    ChannelExec channel = null;
-	
-    private boolean executing = false;
-    private String nowFile = "";
-    private String nowIp = "";
-    private String nowModel = "";
-    private LocalDateTime startTest = LocalDateTime.now();
-    
-    
-    @Autowired
+	Session session = null;
+	ChannelExec channel = null;
+
+	private boolean executing = false;
+	private String nowFile = "";
+	private String nowIp = "";
+	private String nowModel = "";
+	private LocalDateTime startTest = LocalDateTime.now();
+
+
+	@Autowired
 	IMLModelService MLModelService;
 	/**
 	 * @param file
@@ -73,41 +75,41 @@ public class testController {
 		for(MultipartFile file : files) {
 			uploadFile = MdfFileReader.readFile(file);	
 		}
-		
-		
-        
+
+
+
         JSch jsch = new JSch();
         // 2. 세션 객체를 생성한다 (사용자 이름, 접속할 호스트, 포트를 인자로 준다.) 
         session = jsch.getSession(username, host, port);
-     
+
         // 3. 패스워드를 설정한다.
         session.setPassword(password);
-     
+
         // 4. 세션과 관련된 정보를 설정한다.
         java.util.Properties config = new java.util.Properties();
         // 4-1. 호스트 정보를 검사하지 않는다.
         config.put("StrictHostKeyChecking", "no");
         session.setConfig(config);
-     
+
         // 5. 접속한다.
         session.connect();
-     
+
         // 6. sftp 채널을 연다.
         channel = (ChannelExec) session.openChannel("exec");
-     
+
         // 8. 채널을 SSH용 채널 객체로 캐스팅한다
         ChannelExec channelExec = (ChannelExec) channel;
         System.out.println("==> Connected to" + host);
-        
+
         channelExec.setCommand("source /home/anaconda3/bin/activate tf;python /home/jwyeom/get_keys.py " + uploadFile.getOriginalFilename() + ";");
-   
+
         int BUFFER_SIZE = 256;
         InputStream inputStream = channel.getInputStream(); // <- 일반 출력 스트림
         byte[] buffer = new byte[256];
         final InputStream errStream = channel.getErrStream();
         channelExec.connect();
         String result = "";
-        
+
         while(true) {
             while (inputStream.available() > 0) {
                 int i = inputStream.read(buffer, 0, BUFFER_SIZE);
@@ -117,31 +119,31 @@ public class testController {
                 result += new String(buffer, 0, i);
                 System.out.println(result);
             }
-         
+
             while (errStream.available() > 0) {
                 int i = errStream.read(buffer, 0, BUFFER_SIZE);
                 if (i > 0) {
                    // System.err.println(new String(buffer, 0, i));
                 }
             }
-         
+
             if (channel.isClosed()) {
                 if (inputStream.available() > 0 || errStream.available() > 0) {
                     continue;
                 }
                 break;
             }
-         
+
         }
-         
+
         final int exitStatus = channel.getExitStatu           s();
         System.out.println("exitStatus : " + exitStatus);
         result=result.substring(result.indexOf("'") + 1, result.lastIndexOf("'"));
         String[] words = result.split("', '");
         return words;
 	}*/
-	
-    
+
+
 	/**
 	 * @param mlList
 	 * @param model
@@ -161,43 +163,45 @@ public class testController {
 	@ResponseBody
 	public void execTest(@RequestParam(value="mlList", required=false) List<Integer> mlList,
 			Model model,HttpServletRequest request,HttpSession sess) throws UnsupportedEncodingException, IOException, JSchException {
-		executing = true;
-		
 		CommandExecuter cmdExecuter = new CommandExecuter();
 		String ip = request.getRemoteAddr();
 		List<String> currentFileList = new ArrayList<String>();
 
-    	FileReader fileReader = new FileReader();
-    	ArrayList<File> fileList = fileReader.getAllFile(ip, ".dat");
-    	String[] words = null;
-    	String tempPath = null;
-    	String tempFileName = null;
-    	
-    	for(File tempFile : fileList) {
-    		//csv 만들기
-    		tempPath =tempFile.getParent();
-    		tempFileName =tempFile.getName();  
+		FileReader fileReader = new FileReader();
+		ArrayList<File> fileList = fileReader.getAllFile(ip, ".dat");
+		String[] words = null;
+		String tempPath = null;
+		String tempFileName = null;
+		System.out.println("size : " + fileList.size());
+		for(File tempFile : fileList) {
+			//csv 만들기
+			tempPath =tempFile.getParent();
+			tempFileName =tempFile.getName();  
 			String command = cmdExecuter.inputCommand("python exportCSV.py " + tempPath + '\\' + tempFileName);
 			String result = cmdExecuter.execCommand(command);
+			System.out.println("result : " +result);
 			result=result.substring(result.indexOf("'") + 1, result.lastIndexOf("'"));
 			words = result.split("', '");
-    	}
-    	
-    	ArrayList<File> csvFileList = FileReader.getAllFile(ip, ".csv");
-    	for(File tempFile : csvFileList) {
+		}
+
+		ArrayList<File> csvFileList = FileReader.getAllFile(ip, ".csv");
+		for(File tempFile : csvFileList) {
 			//결과 받기			
 			List<Integer> idxList = new ArrayList<Integer>();
-        	if(tempFile.isFile()) {
+			if(tempFile.isFile()) {
 				for(int i = 0; i < mlList.size(); i++) {
 					MLModel mlmodel = MLModelService.getOneModel(mlList.get(i));
-					
+
 					//현재 진행 정보 저장
+					executing = true;
 					tempFileName =tempFile.getName();  
 					nowFile=tempFileName;
 					nowIp = ip;
 					nowModel = mlmodel.getName();
 					startTest = LocalDateTime.now();
-					
+
+
+
 					String[] mlModelFeature = mlmodel.getFeature().split(",");
 
 					String indexList = ""; 
@@ -207,14 +211,14 @@ public class testController {
 					for(int j = 0; j < mlmodel.getFeature_cnt(); j++) {
 						indexList += " " + idxList.get(j);
 					}
-					
+
 					//실행
 					String cmd = cmdExecuter.inputCommand("python execute.py " + tempPath + " " + tempPath+'\\' + mlmodel.getFile() + " " + tempPath+'\\' + tempFileName + " " + mlmodel.getFeature_cnt() + indexList);
 					//String cmd = cmdExecuter.inputCommand("ipconfig");
 					String pythonResult = cmdExecuter.execCommand(cmd);
 					System.out.println(pythonResult);
 					System.out.println("python execute.py " + tempPath + " " + tempPath+'\\' + mlmodel.getFile() + " " + tempPath+'\\' + tempFileName + " " + mlmodel.getFeature_cnt() + indexList);
-					
+
 					//실행완료
 					//실행 결과 파일 읽기
 					BufferedReader br = null;
@@ -244,7 +248,7 @@ public class testController {
 					System.out.println("size : " + originFile.size());
 
 					br.close();
-        			BufferedWriter bufWriter = Files.newBufferedWriter(Paths.get("D:\\\\share\\" + tempFileName));
+					BufferedWriter bufWriter = Files.newBufferedWriter(Paths.get("D:\\\\share\\" + tempFileName));
 					int k = 0;
 					boolean space = false;
 					if(k < originFile.size()/2) {
@@ -252,7 +256,7 @@ public class testController {
 					}
 					for(List<String> newLine : originFile) {
 						List<String> list = newLine;
-						
+
 						for(String data: list) {
 							bufWriter.write(data);
 							bufWriter.write(",");
@@ -271,20 +275,12 @@ public class testController {
 					}
 					bufWriter.close();
 				}
-  			}
-        
-    	}
-    	
-    	//현재 진행 정보 초기화
-    	executing=false;
-    	tempFileName = "";  
-		nowFile="";
-		nowIp = "";
-		nowModel = "";
-		startTest = LocalDateTime.now();
+			}
+		}
+		executing=false;
 	}
-	
-	
+
+
 	/**
 	 * @param model
 	 * @return MAIN PAGE

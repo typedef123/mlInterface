@@ -7,10 +7,13 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>검증 구성 관리</title>
+<!-- Custom styles for this template -->
 <link rel="stylesheet" href="/webjars/bootstrap/4.1.3/dist/css/bootstrap.min.css">
 <link rel="stylesheet" href="<c:url value='/resources/css/NewFile.css'/>">
 <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css">
-<!-- Custom styles for this template -->
+	<script src="/webjars/jquery/3.3.1-1/jquery.min.js"></script>
+	<script src="/webjars/bootstrap/4.1.3/dist/js/bootstrap.min.js"></script>
+	<script src="/webjars/bootstrap/4.1.3/dist/js/bootstrap.bundle.min.js"></script>
 <link href="/resources/css/logo-nav.css" rel="stylesheet">
 <style>
 body {margin: 10px; background-color: #ebebeb;}
@@ -40,22 +43,14 @@ body {margin: 10px; background-color: #ebebeb;}
 
 </style>
 </head>
-	<script src="/webjars/jquery/3.3.1-1/jquery.min.js"></script>
-	<script src="/webjars/bootstrap/4.1.3/dist/js/bootstrap.min.js"></script>
-	<script src="/webjars/bootstrap/4.1.3/dist/js/bootstrap.bundle.min.js"></script>
+
 <script>
 $(document).ready(function(){
 	$('[data-toggle="popover"]').popover({
 	      placement: 'top',
 	      trigger: 'hover'
 	});
-
-	
-	//document.getElementById('modelTable').getElementsByTagName('tbody')[0].width="5%";
-
-	console.log(document.getElementById('modelTable').getElementsByTagName('tbody')[0].width);
-	
-	  var fileTarget = $('.upload-hidden');
+	var fileTarget = $('.upload-hidden');
 
 	    fileTarget.on('change', function(){
 	        if(window.FileReader){
@@ -161,7 +156,7 @@ function completeRow(obj) {
 	formData.append('id', tr[0].id);
 	formData.append('feature', tr[0].children[4].children[0].value);
 	formData.append('name', tr[0].children[2].children[0].value);
-	formData.append('description', tr[0].children[5].children[0].value)
+	formData.append('description', tr[0].children[5].children[0].data-content)
     $.ajax({
 		type : 'post',
 		url : '/editModel',
@@ -241,7 +236,6 @@ function makeNull() {
 </script>
 <body>
 	<%@include  file="header.jsp" %>
-
 	<div class="container border card">
 		<div class="card-body">
 			<h5 class="card-title">검증 구성 관리</h5>
@@ -301,6 +295,8 @@ function makeNull() {
 		</div>
 	</div>
 	<br>
+	<div><p class="credits"><span class="stars">&#10026;</span>A pen by <a href="https://twitter.com/lukeslytalker" target="_blank">Nate Balcom</a> more <a href="https://codepen.io/nbalcom/pens/public/" target="_blank">pens here</a><span class="stars">&#10026;</span></p></div>
+	
 	<div class="container border card">
 		<div class="card-body">
 			<h5 class="card-title">검증 구성 추가</h5>

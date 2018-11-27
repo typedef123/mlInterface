@@ -12,6 +12,8 @@ body {
 
 	src:local(¡Ø), url('./font/NanumGothic.eot/NanumGothic.woff') format('woff');
 	font-size: 12px;
+	margin: 10px; 
+	background-color: #ebebeb;
 }
 .centerTable {
 	table-layout:fixed; 
