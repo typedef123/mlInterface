@@ -39,4 +39,23 @@ testX /= 255
 testX = testX.reshape(len(testX), 10, cnt, 1)
 print(len(testX))
 output = model.predict_classes(testX)
-np.savetxt("./output.csv", result.astype(int), fmt='%5.0f'. output, delimiter=",")
+np.savetxt("output.csv", output.astype(int), fmt='%5.0f', delimiter=",")
+
+
+fig,(ax1) = plt.subplots(nrows=1)
+fig.set_size_inches((18.5, 10.5))
+
+
+
+ax1.plot(test[:, [3]] * np.amax(X_test), 'g')
+ax1.plot(test[:, [1]],'k')
+
+for (start, end) in range_list:
+    ax1.axvspan(start, end,facecolor='red', alpha=0.5)
+
+
+ax1.set_yticks(np.arange(0, np.amax(X_test), step=10))
+
+
+plt.tight_layout()
+plt.savefig('pict.png')

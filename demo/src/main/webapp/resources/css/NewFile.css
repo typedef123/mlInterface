@@ -21,7 +21,16 @@ body {
 .centerTable thead {
 	text-align: center;
 	word-break:break-all;
+	text-overflow:ellipsis;
+	overflow:hidden;
+	white-space:nowrap;
+	
 }
 .centerTable tbody {
-	text-align: center;
+	text-align: center;		
+}
+.centerTable thead th, .centerTable tbody td{
+	text-overflow:ellipsis;
+	overflow:hidden;
+	white-space:nowrap;
 }

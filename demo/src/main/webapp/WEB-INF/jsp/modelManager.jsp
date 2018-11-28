@@ -108,7 +108,7 @@ function addModel() {
 			console.log(error);
 			console.log(error.status);
 		}
-	})
+	});
 }
 function editRow(obj) {
 	var tr = $(obj).parent().parent();

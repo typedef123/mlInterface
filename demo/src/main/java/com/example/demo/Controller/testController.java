@@ -3,9 +3,14 @@ package com.example.demo.Controller;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
+import java.nio.charset.CharsetDecoder;
+import java.nio.charset.CodingErrorAction;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
@@ -27,6 +32,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.example.demo.bean.MLModel;
+import com.example.demo.bean.ResultDetail;
 import com.example.demo.bean.TestResult;
 import com.example.demo.engine.CommandExecuter;
 import com.example.demo.engine.FileReader;
@@ -213,7 +219,11 @@ public class testController {
 					String indexList = ""; 
 					//index 알아내기
 					for(int j = 0; j < mlmodel.getFeature_cnt(); j++)
-						idxList.add(Arrays.binarySearch(words, mlModelFeature[j]));
+						for(int k = 0; k < words.length; k++)
+							if(words[k].equals(mlModelFeature[j])) {
+								idxList.add(k);
+							}
+						
 					for(int j = 0; j < mlmodel.getFeature_cnt(); j++) {
 						indexList += " " + idxList.get(j);
 					}
@@ -240,10 +250,16 @@ public class testController {
 					}
 					System.out.println("size : " + ret.size());
 					br.close();
+					
 					//원래 파일 읽기
 					br = Files.newBufferedReader(Paths.get("D:\\\\share\\" + tempFileName));
 					Charset.forName("UTF-8");
 					line = "";
+					FileInputStream input = new FileInputStream("D:\\\\share\\" + tempFileName);
+					CharsetDecoder decoder = Charset.forName("UTF-8").newDecoder();
+			        decoder.onMalformedInput(CodingErrorAction.IGNORE);
+			        InputStreamReader reader = new InputStreamReader(input, decoder);
+			        br = new BufferedReader(reader);
 					List<List<String>> originFile = new  ArrayList<List<String>>();
 					while((line = br.readLine()) != null) {
 						List<String> tmpList = new ArrayList<String>();
@@ -300,7 +316,7 @@ public class testController {
 					int normalsection = 0; 
 					boolean abnormal = false;
 					for(List<String> newLine : ret) {
-						int num = Integer.parseInt(newLine.get(0));
+						int num = Integer.parseInt(newLine.get(0).trim());
 						if(abnormal == false && num == 1) {
 							abnormal = true;
 							abnormalsection++;
@@ -334,7 +350,28 @@ public class testController {
 		model.addAttribute("nowModel", nowModel);
 		model.addAttribute("startTest", startTest);
 		model.addAttribute("localDateTimeFormat", DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm"));
-
+		List<TestResult> testResultList = (List<TestResult>) TestResultService.findAll();
+		List<ResultDetail> resultDetailList = new ArrayList<ResultDetail>();
+		for(TestResult testResult : testResultList) {
+			MLModel mlModel = MLModelService.findOne(testResult.getMlmodelid());
+			ResultDetail resultDetail = new ResultDetail();
+			resultDetail.setAbnormalsection(testResult.getAbnormalsection());
+			resultDetail.setEndtime(testResult.getEndtime());
+			resultDetail.setId(testResult.getId());
+			resultDetail.setIp(testResult.getIp());
+			resultDetail.setMlmodelid(testResult.getId());
+			resultDetail.setModelFeature(mlModel.getFeature());
+			resultDetail.setModelName(mlModel.getName());
+			resultDetail.setNormalsection(testResult.getNormalsection());
+			resultDetail.setResultfile(testResult.getResultfile());
+			resultDetail.setSpenttime(testResult.getSpenttime());
+			resultDetail.setStarttime(testResult.getStarttime());
+			resultDetail.setTestfile(testResult.getTestfile());
+			resultDetail.setTotalrow(testResult.getTotalrow());
+			resultDetailList.add(resultDetail);
+		}
+		
+		model.addAttribute("resultDetailList",resultDetailList);
 		return "main";
 	}
 }
